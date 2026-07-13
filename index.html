@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encuentro Privado · Natural Trade + Global Forest</title>
+<meta name="description" content="Confirma tu asistencia al encuentro privado de Natural Trade + Global Forest · 1 de septiembre de 2026 · Hotel Presidente InterContinental Polanco, CDMX">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#101a14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101a14; --panel:#16221b; --line:#2a3c30;
+    --gold:#c8a45c; --gold-soft:#e0c384; --cream:#f3ecdd; --muted:#9fae9f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--cream);
+    font-family:'Montserrat',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+    background-image:radial-gradient(1200px 600px at 50% -10%, rgba(200,164,92,.14), transparent 60%);
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:48px 22px 64px}
+  .eyebrow{
+    text-align:center;color:var(--gold);font-size:12px;font-weight:600;
+    letter-spacing:.32em;text-transform:uppercase;margin-bottom:14px;
+  }
+  .subline{
+    text-align:center;color:var(--muted);font-size:11.5px;font-weight:500;
+    letter-spacing:.14em;text-transform:uppercase;line-height:1.7;margin-bottom:30px;
+  }
+  h1{
+    font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;
+    font-size:clamp(38px,8vw,54px);line-height:1.08;text-align:center;margin-bottom:20px;
+  }
+  .intro{text-align:center;color:var(--muted);font-size:15px;line-height:1.75;margin-bottom:34px}
+  .intro b{color:var(--cream);font-weight:600}
+  .divider{display:flex;align-items:center;gap:14px;margin:34px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .divider span{color:var(--gold);font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:600}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:520px){.meta{grid-template-columns:1fr}}
+  .meta .box{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px 18px;text-align:center;
+  }
+  .meta .k{color:var(--gold);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;font-weight:600;margin-bottom:10px}
+  .meta .v{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:600;line-height:1.3}
+  .meta .s{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.5}
+  .meta a{color:var(--gold-soft);text-decoration:none;border-bottom:1px dotted var(--gold)}
+  .badge{
+    text-align:center;background:rgba(200,164,92,.08);border:1px solid rgba(200,164,92,.35);
+    border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.65;color:var(--gold-soft);margin-bottom:34px;
+  }
+  form .field{margin-bottom:16px}
+  label{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:7px}
+  label em{color:var(--gold);font-style:normal}
+  input[type=text],input[type=email],input[type=tel]{
+    width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    color:var(--cream);font-family:inherit;font-size:16px;padding:13px 14px;outline:none;
+    transition:border-color .15s;
+  }
+  input:focus{border-color:var(--gold)}
+  .radios{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}
+  .radios input{position:absolute;opacity:0;pointer-events:none}
+  .radios label{
+    display:block;text-align:center;cursor:pointer;margin:0;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 10px;font-size:12px;letter-spacing:.1em;color:var(--cream);
+    transition:all .15s;
+  }
+  .radios input:checked+label{background:rgba(200,164,92,.14);border-color:var(--gold);color:var(--gold-soft)}
+  .hp{position:absolute;left:-9999px;opacity:0}
+  button{
+    width:100%;background:var(--gold);color:#17130a;border:0;border-radius:10px;
+    font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+    padding:17px;cursor:pointer;transition:background .15s;margin-top:6px;
+  }
+  button:hover{background:var(--gold-soft)}
+  button:disabled{opacity:.55;cursor:wait}
+  .err{display:none;background:rgba(180,60,60,.12);border:1px solid rgba(220,90,90,.4);color:#e8b0a8;border-radius:10px;padding:12px 14px;font-size:13.5px;margin-bottom:16px;line-height:1.5}
+  .ok{display:none;text-align:center;padding:26px 6px}
+  .ok .big{font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-weight:600;margin-bottom:14px;color:var(--gold-soft)}
+  .ok p{color:var(--muted);font-size:15px;line-height:1.75}
+  .ok p b{color:var(--cream)}
+  footer{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.9;margin-top:44px}
+  footer a{color:var(--gold-soft);text-decoration:none}
+  .marcas{
+    text-align:center;font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:19px;letter-spacing:.06em;color:var(--cream);margin-bottom:8px;
+  }
+  .marcas span{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="marcas">Natural Trade <span>+</span> Global Forest</div>
+  <div class="eyebrow">Encuentro Privado · CDMX</div>
+  <div class="subline">La noche previa a la Conferencia y Expo de la<br>Industria del Embalaje de Madera LATAM</div>
+
+  <h1>Una nueva forma<br>de comprar madera</h1>
+
+  <p class="intro">Te invitamos a un encuentro privado para <b>agradecer tu confianza</b> y mostrarte
+  nuestra nueva etapa de servicio: más tecnología y visibilidad logística, mejor información
+  para tu negocio y compras en tiempo real.<br><br>
+  Networking, innovación, canapés, barra libre… <b>y algo de magia</b>.</p>
+
+  <div class="meta">
+    <div class="box">
+      <div class="k">Cuándo</div>
+      <div class="v">Martes 1 de septiembre</div>
+      <div class="s">2026 · 19:00 – 21:00 h</div>
+    </div>
+    <div class="box">
+      <div class="k">Dónde</div>
+      <div class="v">Salón «Feria»</div>
+      <div class="s">Hotel Presidente InterContinental<br>Polanco, Ciudad de México<br>
+      <a href="https://maps.google.com/?q=Hotel+Presidente+InterContinental+Polanco+Ciudad+de+Mexico" target="_blank" rel="noopener">Ver mapa</a></div>
+    </div>
+  </div>
+
+  <div class="badge">Acceso únicamente con <b>invitación personal</b>.<br>
+  Al confirmar se genera tu pase individual: unos días antes del evento recibirás
+  por correo tu <b>código QR personal</b> de acceso.</div>
+
+  <div class="divider"><span>Confirma tu asistencia</span></div>
+
+  <div class="err" id="err"></div>
+
+  <form id="f" novalidate>
+    <div class="field"><label for="nombre">Nombre completo <em>*</em></label>
+      <input type="text" id="nombre" name="nombre" autocomplete="name" required></div>
+    <div class="field"><label for="empresa">Empresa <em>*</em></label>
+      <input type="text" id="empresa" name="empresa" autocomplete="organization" required></div>
+    <div class="field"><label for="puesto">Puesto</label>
+      <input type="text" id="puesto" name="puesto" autocomplete="organization-title"></div>
+    <div class="field"><label for="email">Correo electrónico <em>*</em></label>
+      <input type="email" id="email" name="email" autocomplete="email" required></div>
+    <div class="field"><label for="celular">Celular / WhatsApp</label>
+      <input type="tel" id="celular" name="celular" autocomplete="tel"></div>
+    <div class="hp"><label for="web">Sitio web</label><input type="text" id="web" name="web" tabindex="-1" autocomplete="off"></div>
+
+    <div class="radios">
+      <input type="radio" name="asistira" id="rsi" value="si" checked>
+      <label for="rsi">✓ &nbsp;Sí, asistiré</label>
+      <input type="radio" name="asistira" id="rno" value="no">
+      <label for="rno">No podré asistir</label>
+    </div>
+
+    <button type="submit" id="btn">Confirmar</button>
+  </form>
+
+  <div class="ok" id="ok"></div>
+
+  <footer>¿Dudas o cambios? Escríbenos a <a href="mailto:info@naturaltrade.ca">info@naturaltrade.ca</a></footer>
+</div>
+
+<script>
+(function(){
+  var f = document.getElementById('f');
+  var err = document.getElementById('err');
+  var ok = document.getElementById('ok');
+  var btn = document.getElementById('btn');
+  var base = 'https://nlbydvntjbevbhghtdcx.supabase.co/functions/v1/evento';
+
+  f.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    err.style.display = 'none';
+    var datos = {
+      nombre:  f.nombre.value.trim(),
+      empresa: f.empresa.value.trim(),
+      puesto:  f.puesto.value.trim(),
+      email:   f.email.value.trim(),
+      celular: f.celular.value.trim(),
+      asistira: f.querySelector('input[name=asistira]:checked').value === 'si',
+      web: f.web.value
+    };
+    if(!datos.nombre || !datos.empresa || !datos.email){
+      err.textContent = 'Por favor completa nombre, empresa y correo.';
+      err.style.display = 'block'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    fetch(base + '/confirmar', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(datos)
+    }).then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
+    .then(function(res){
+      if(res.s === 200 && res.j.ok){
+        f.style.display = 'none';
+        document.querySelector('.divider').style.display = 'none';
+        if(res.j.asistira){
+          ok.innerHTML = '<div class="big">¡Listo, ' + escapeHtml(res.j.nombre) + '! Tu lugar está reservado.</div>' +
+            '<p>Unos días antes del evento recibirás por correo tu <b>código QR personal de acceso</b>.<br><br>' +
+            'Nos dará mucho gusto recibirte el <b>martes 1 de septiembre a las 19:00 h</b><br>en el Salón «Feria» del Presidente InterContinental Polanco.</p>';
+        } else {
+          ok.innerHTML = '<div class="big">Gracias por avisarnos.</div>' +
+            '<p>Lamentamos que no puedas acompañarnos esta vez.<br>' +
+            'Si tu agenda cambia, escríbenos a <b>info@naturaltrade.ca</b> y con gusto te reservamos un lugar.</p>';
+        }
+        ok.style.display = 'block';
+        window.scrollTo({top:0, behavior:'smooth'});
+      } else {
+        err.textContent = res.j.error || 'No se pudo enviar. Intenta de nuevo.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Confirmar';
+      }
+    }).catch(function(){
+      err.textContent = 'Error de conexión. Intenta de nuevo.';
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Confirmar';
+    });
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+})();
+</script>
+</body>
+</html>
