@@ -23,6 +23,24 @@
   .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   .bar button{padding:8px 14px;font-size:12.5px}
   #panel{display:none}
+  .dup{display:inline-block;background:rgba(200,164,92,.16);border:1px solid rgba(200,164,92,.5);
+    color:#e0c384;border-radius:6px;font-size:10.5px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+  .manual{display:inline-block;background:rgba(120,160,220,.14);border:1px solid rgba(120,160,220,.45);
+    color:#a9c4e8;border-radius:6px;font-size:10.5px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+  #alta{display:none;background:#16221b;border:1px solid #2a3c30;border-radius:12px;
+    padding:16px;margin:14px 0}
+  #alta h2{font-size:15px;margin:0 0 12px;color:#c8a45c}
+  #alta .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+  #alta input{width:100%;box-sizing:border-box;background:#101a14;border:1px solid #2a3c30;
+    border-radius:8px;color:#f3ecdd;font-size:14px;padding:10px 12px;outline:none}
+  #alta input:focus{border-color:#c8a45c}
+  #alta label{display:block;font-size:11px;color:#9fae9f;text-transform:uppercase;
+    letter-spacing:.08em;margin:0 0 4px}
+  #alta .acciones{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  #alta .sel{background:#101a14;border:1px solid #2a3c30;border-radius:8px;color:#f3ecdd;
+    font-size:14px;padding:10px 12px}
+  #aerr{color:#e8b0a8;display:none;font-size:13.5px}
+  #aok{color:#9ed6a8;display:none;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -41,11 +59,37 @@
         <div class="tot" id="tot"></div>
       </div>
       <div>
+        <button id="agregar">＋ Agregar registro</button>
         <button id="refrescar">Refrescar</button>
         <button id="csv">Descargar CSV</button>
         <button id="salir" style="background:#2a3c30;color:#f3ecdd">Salir</button>
       </div>
     </div>
+
+    <div id="alta">
+      <h2>Registro manual</h2>
+      <div class="g">
+        <div><label for="aNombre">Nombre completo *</label><input id="aNombre" autocomplete="off"></div>
+        <div><label for="aEmpresa">Empresa *</label><input id="aEmpresa" autocomplete="off"></div>
+        <div><label for="aPuesto">Puesto</label><input id="aPuesto" autocomplete="off"></div>
+        <div><label for="aEmail">Correo *</label><input id="aEmail" type="email" autocomplete="off"></div>
+        <div><label for="aCelular">Celular / WhatsApp</label><input id="aCelular" autocomplete="off"></div>
+        <div><label for="aNotas">Notas (quién lo registró, contexto)</label><input id="aNotas" autocomplete="off"></div>
+      </div>
+      <div class="acciones">
+        <select class="sel" id="aAsiste">
+          <option value="si" selected>✅ Sí asistirá</option>
+          <option value="no">❌ No asistirá</option>
+        </select>
+        <button id="aGuardar">Guardar registro</button>
+        <button id="aCerrar" style="background:#2a3c30;color:#f3ecdd">Cerrar</button>
+        <span id="aerr"></span><span id="aok"></span>
+      </div>
+      <p style="color:#9fae9f;font-size:12.5px;margin:12px 0 0">Se puede repetir un correo: cada
+        registro es una fila nueva y nadie se borra. Los repetidos salen marcados con
+        <span class="dup">correo repetido</span> en la lista para depurarlos después.</p>
+    </div>
+
     <div class="wrap"><table id="tabla"></table></div>
   </div>
 
@@ -82,11 +126,16 @@
       var si = datos.filter(function(r){ return r.asistira; }).length;
       document.getElementById('tot').innerHTML = '<b>' + si + '</b> confirmados · <b>' +
         (datos.length - si) + '</b> no asistirán · <b>' + datos.length + '</b> respuestas';
+      var porCorreo = {};
+      datos.forEach(function(r){ var e = (r.email||'').toLowerCase();
+        porCorreo[e] = (porCorreo[e] || 0) + 1; });
       var h = '<tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>Email</th><th>Celular</th><th>Asiste</th><th>Registrado</th><th>Check-in</th></tr>';
       if(!datos.length) h += '<tr><td colspan="8">Sin registros todavía</td></tr>';
       datos.forEach(function(r){
-        h += '<tr class="' + (r.asistira ? '' : 'no') + '"><td>' + esc(r.nombre) + '</td><td>' + esc(r.empresa) +
-          '</td><td>' + esc(r.puesto) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.celular) +
+        var dup = porCorreo[(r.email||'').toLowerCase()] > 1 ? ' <span class="dup">correo repetido</span>' : '';
+        var man = r.fuente === 'manual' ? ' <span class="manual">manual</span>' : '';
+        h += '<tr class="' + (r.asistira ? '' : 'no') + '"><td>' + esc(r.nombre) + man + '</td><td>' + esc(r.empresa) +
+          '</td><td>' + esc(r.puesto) + '</td><td>' + esc(r.email) + dup + '</td><td>' + esc(r.celular) +
           '</td><td>' + (r.asistira ? '✅ Sí' : '❌ No') + '</td><td>' + fecha(r.creado_en) +
           '</td><td>' + (r.checkin_en ? '🎫 ' + fecha(r.checkin_en) : '') + '</td></tr>';
       });
@@ -121,6 +170,58 @@
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
     a.download = 'confirmados_evento_1sep2026.csv';
     a.click();
+  });
+
+  // -------- registro manual --------
+  var ALTA = 'https://nlbydvntjbevbhghtdcx.supabase.co/functions/v1/evento/alta';
+  var alta = document.getElementById('alta');
+  var aerr = document.getElementById('aerr'), aok = document.getElementById('aok');
+  document.getElementById('agregar').addEventListener('click', function(){
+    alta.style.display = alta.style.display === 'block' ? 'none' : 'block';
+    aerr.style.display = 'none'; aok.style.display = 'none';
+    if(alta.style.display === 'block') document.getElementById('aNombre').focus();
+  });
+  document.getElementById('aCerrar').addEventListener('click', function(){
+    alta.style.display = 'none';
+  });
+  document.getElementById('aGuardar').addEventListener('click', function(){
+    aerr.style.display = 'none'; aok.style.display = 'none';
+    var btn = this;
+    var datos = {
+      clave:   sessionStorage.getItem('evclave') || '',
+      nombre:  document.getElementById('aNombre').value.trim(),
+      empresa: document.getElementById('aEmpresa').value.trim(),
+      puesto:  document.getElementById('aPuesto').value.trim(),
+      email:   document.getElementById('aEmail').value.trim(),
+      celular: document.getElementById('aCelular').value.trim(),
+      notas:   document.getElementById('aNotas').value.trim(),
+      asistira: document.getElementById('aAsiste').value === 'si'
+    };
+    if(!datos.nombre || !datos.empresa || !datos.email){
+      aerr.textContent = 'Faltan nombre, empresa o correo.'; aerr.style.display = 'inline'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    fetch(ALTA, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(datos) })
+    .then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
+    .then(function(res){
+      btn.disabled = false; btn.textContent = 'Guardar registro';
+      if(res.s === 200 && res.j.ok){
+        aok.textContent = '✓ Guardado: ' + (res.j.fila ? res.j.fila.nombre : datos.nombre);
+        aok.style.display = 'inline';
+        ['aNombre','aEmpresa','aPuesto','aEmail','aCelular','aNotas'].forEach(function(id){
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('aNombre').focus();
+        cargar(sessionStorage.getItem('evclave') || '');
+      } else {
+        aerr.textContent = res.j.error || 'No se pudo guardar.';
+        aerr.style.display = 'inline';
+      }
+    })
+    .catch(function(){
+      btn.disabled = false; btn.textContent = 'Guardar registro';
+      aerr.textContent = 'Error de conexión.'; aerr.style.display = 'inline';
+    });
   });
 
   var guardada = sessionStorage.getItem('evclave');
