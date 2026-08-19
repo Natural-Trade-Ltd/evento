@@ -14,6 +14,7 @@
   .gate input:focus{border-color:#c8a45c}
   button{background:#c8a45c;color:#17130a;border:0;border-radius:10px;font-size:14px;font-weight:600;padding:12px 22px;cursor:pointer}
   button:hover{background:#e0c384}
+  button:disabled{opacity:.55;cursor:wait}
   .err{color:#e8b0a8;margin-top:12px;display:none}
   table{border-collapse:collapse;width:100%;font-size:14px;background:#16221b;border-radius:8px;overflow:hidden}
   th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #24352b;white-space:nowrap}
@@ -37,10 +38,33 @@
   #alta label{display:block;font-size:11px;color:#9fae9f;text-transform:uppercase;
     letter-spacing:.08em;margin:0 0 4px}
   #alta .acciones{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-  #alta .sel{background:#101a14;border:1px solid #2a3c30;border-radius:8px;color:#f3ecdd;
+  .sel{background:#101a14;border:1px solid #2a3c30;border-radius:8px;color:#f3ecdd;
     font-size:14px;padding:10px 12px}
   #aerr{color:#e8b0a8;display:none;font-size:13.5px}
   #aok{color:#9ed6a8;display:none;font-size:13.5px}
+
+  /* barra de filtros / búsqueda (modo puerta) */
+  .filtros{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
+  .filtros input{flex:1;min-width:220px;box-sizing:border-box;background:#16221b;
+    border:1px solid #2a3c30;border-radius:10px;color:#f3ecdd;font-size:16px;
+    padding:11px 14px;outline:none}
+  .filtros input:focus{border-color:#c8a45c}
+  .chip{background:#16221b;border:1px solid #2a3c30;border-radius:999px;color:#9fae9f;
+    font-size:12.5px;font-weight:600;padding:7px 13px;cursor:pointer;white-space:nowrap}
+  .chip:hover{border-color:#c8a45c;color:#e0c384;background:#16221b}
+  .chip.on{background:#c8a45c;border-color:#c8a45c;color:#17130a}
+  /* botones dentro de la tabla */
+  .tbtn{background:#1c2b22;border:1px solid #2a3c30;color:#f3ecdd;border-radius:8px;
+    font-size:12.5px;font-weight:600;padding:6px 12px;cursor:pointer}
+  .tbtn:hover{border-color:#c8a45c;background:#1c2b22;color:#e0c384}
+  .tbtn.si{color:#9ed6a8}
+  .tbtn.nover{color:#e8b0a8}
+  .tbtn.llego{background:#c8a45c;border-color:#c8a45c;color:#17130a}
+  .tbtn.llego:hover{background:#e0c384}
+  .hecho{color:#9ed6a8;font-weight:600}
+  .undo{background:none;border:0;color:#9fae9f;cursor:pointer;font-size:12px;padding:2px 6px}
+  .undo:hover{color:#e8b0a8}
+  .quien{color:#9fae9f;font-size:11.5px}
 </style>
 </head>
 <body>
@@ -90,15 +114,29 @@
         <span class="dup">correo repetido</span> en la lista para depurarlos después.</p>
     </div>
 
+    <div class="filtros">
+      <input id="buscar" type="search" placeholder="🔍 Buscar por nombre, empresa o correo… (el día del evento: teclea el nombre y dale 🎫)">
+      <span class="chip on" data-f="todos">Todos</span>
+      <span class="chip" data-f="si">✅ Asisten</span>
+      <span class="chip" data-f="no">❌ Cancelaron</span>
+      <span class="chip" data-f="llegaron">🎫 Llegaron</span>
+      <span class="chip" data-f="faltan">⏳ Por llegar</span>
+      <select class="sel" id="orden" style="padding:7px 10px;font-size:12.5px">
+        <option value="recientes">Recientes primero</option>
+        <option value="nombre">Nombre A–Z</option>
+      </select>
+    </div>
+
     <div class="wrap"><table id="tabla"></table></div>
   </div>
 
 <script>
 (function(){
-  var API = 'https://nlbydvntjbevbhghtdcx.supabase.co/functions/v1/evento/lista';
+  var BASE = 'https://nlbydvntjbevbhghtdcx.supabase.co/functions/v1/evento';
   var gate = document.getElementById('gate'), panel = document.getElementById('panel');
   var gerr = document.getElementById('gerr');
   var datos = [];
+  var filtro = 'todos';
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -108,13 +146,82 @@
     try { return new Date(iso).toLocaleString('es-MX',{timeZone:'America/Mexico_City',dateStyle:'short',timeStyle:'short'}); }
     catch(e){ return iso; }
   }
+  function hora(iso){
+    if(!iso) return '';
+    try { return new Date(iso).toLocaleTimeString('es-MX',{timeZone:'America/Mexico_City',timeStyle:'short'}); }
+    catch(e){ return iso; }
+  }
+  function laClave(){ return sessionStorage.getItem('evclave') || ''; }
 
-  function cargar(clave){
+  // quién está en la puerta (queda en checkin_por)
+  function quien(){
+    var q = localStorage.getItem('ev_quien') || '';
+    if(!q){
+      q = (prompt('¿Quién está en el registro? (tu nombre — queda guardado en cada check-in)') || '').trim();
+      if(q) localStorage.setItem('ev_quien', q);
+    }
+    return q;
+  }
+
+  // ---------- pintar ----------
+  function pintar(){
+    var q = (document.getElementById('buscar').value || '').trim().toLowerCase();
+    var orden = document.getElementById('orden').value;
+    var porCorreo = {};
+    datos.forEach(function(r){ var e = (r.email||'').toLowerCase();
+      porCorreo[e] = (porCorreo[e] || 0) + 1; });
+
+    var si = datos.filter(function(r){ return r.asistira; }).length;
+    var lleg = datos.filter(function(r){ return r.checkin_en; }).length;
+    document.getElementById('tot').innerHTML = '<b>' + si + '</b> confirmados · <b>' +
+      (datos.length - si) + '</b> cancelaron · <b>' + lleg + '</b> ya llegaron · <b>' +
+      datos.length + '</b> registros';
+
+    var lista = datos.filter(function(r){
+      if(filtro === 'si' && !r.asistira) return false;
+      if(filtro === 'no' && r.asistira) return false;
+      if(filtro === 'llegaron' && !r.checkin_en) return false;
+      if(filtro === 'faltan' && (r.checkin_en || !r.asistira)) return false;
+      if(!q) return true;
+      return ((r.nombre||'') + ' ' + (r.empresa||'') + ' ' + (r.email||'')).toLowerCase().indexOf(q) >= 0;
+    });
+    if(orden === 'nombre') lista = lista.slice().sort(function(a,b){
+      return String(a.nombre||'').localeCompare(String(b.nombre||''), 'es'); });
+
+    var h = '<tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>Email</th><th>Celular</th><th>Asiste</th><th>Registrado</th><th>Check-in</th></tr>';
+    if(!lista.length) h += '<tr><td colspan="8">Nada con ese filtro.</td></tr>';
+    lista.forEach(function(r){
+      var dup = porCorreo[(r.email||'').toLowerCase()] > 1 ? ' <span class="dup">correo repetido</span>' : '';
+      var man = r.fuente === 'manual' ? ' <span class="manual">manual</span>' : '';
+      var asiste = '<button class="tbtn ' + (r.asistira ? 'si' : 'nover') + '" data-act="asiste" data-id="' + r.id + '" title="Clic para cambiar (cancelación / reconfirmación)">' +
+        (r.asistira ? '✅ Sí' : '❌ No') + '</button>';
+      var chk;
+      if(r.checkin_en){
+        chk = '<span class="hecho">🎫 ' + hora(r.checkin_en) + '</span>' +
+          (r.checkin_por ? ' <span class="quien">· ' + esc(r.checkin_por) + '</span>' : '') +
+          ' <button class="undo" data-act="unchk" data-id="' + r.id + '" data-n="' + esc(r.nombre) + '" title="Quitar check-in">✕</button>';
+      } else if(r.asistira){
+        chk = '<button class="tbtn llego" data-act="chk" data-id="' + r.id + '">🎫 Llegó</button>';
+      } else {
+        chk = '<button class="tbtn" data-act="chk" data-id="' + r.id + '" title="Cancelado — pero si llega, se le da check igual">🎫 Llegó</button>';
+      }
+      h += '<tr class="' + (r.asistira ? '' : 'no') + '"><td' + (r.notas ? ' title="' + esc(r.notas) + '"' : '') + '>' +
+        esc(r.nombre) + man + '</td><td>' + esc(r.empresa) +
+        '</td><td>' + esc(r.puesto) + '</td><td>' + esc(r.email) + dup + '</td><td>' + esc(r.celular) +
+        '</td><td>' + asiste + '</td><td>' + fecha(r.creado_en) +
+        '</td><td>' + chk + '</td></tr>';
+    });
+    document.getElementById('tabla').innerHTML = h;
+  }
+
+  // ---------- cargar ----------
+  function cargar(clave, silencioso){
     gerr.style.display = 'none';
-    fetch(API + '?formato=json&clave=' + encodeURIComponent(clave))
+    fetch(BASE + '/lista?formato=json&clave=' + encodeURIComponent(clave))
     .then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
     .then(function(res){
       if(res.s !== 200 || !res.j.ok){
+        if(silencioso) return;
         gerr.textContent = res.s === 401 ? 'Clave incorrecta.' : (res.j.error || 'Error al cargar.');
         gerr.style.display = 'block';
         sessionStorage.removeItem('evclave');
@@ -123,48 +230,99 @@
       }
       sessionStorage.setItem('evclave', clave);
       datos = res.j.asistentes || [];
-      var si = datos.filter(function(r){ return r.asistira; }).length;
-      document.getElementById('tot').innerHTML = '<b>' + si + '</b> confirmados · <b>' +
-        (datos.length - si) + '</b> no asistirán · <b>' + datos.length + '</b> respuestas';
-      var porCorreo = {};
-      datos.forEach(function(r){ var e = (r.email||'').toLowerCase();
-        porCorreo[e] = (porCorreo[e] || 0) + 1; });
-      var h = '<tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>Email</th><th>Celular</th><th>Asiste</th><th>Registrado</th><th>Check-in</th></tr>';
-      if(!datos.length) h += '<tr><td colspan="8">Sin registros todavía</td></tr>';
-      datos.forEach(function(r){
-        var dup = porCorreo[(r.email||'').toLowerCase()] > 1 ? ' <span class="dup">correo repetido</span>' : '';
-        var man = r.fuente === 'manual' ? ' <span class="manual">manual</span>' : '';
-        h += '<tr class="' + (r.asistira ? '' : 'no') + '"><td>' + esc(r.nombre) + man + '</td><td>' + esc(r.empresa) +
-          '</td><td>' + esc(r.puesto) + '</td><td>' + esc(r.email) + dup + '</td><td>' + esc(r.celular) +
-          '</td><td>' + (r.asistira ? '✅ Sí' : '❌ No') + '</td><td>' + fecha(r.creado_en) +
-          '</td><td>' + (r.checkin_en ? '🎫 ' + fecha(r.checkin_en) : '') + '</td></tr>';
-      });
-      document.getElementById('tabla').innerHTML = h;
+      pintar();
       gate.style.display = 'none'; panel.style.display = 'block';
     })
     .catch(function(){
+      if(silencioso) return;
       gerr.textContent = 'Error de conexión.'; gerr.style.display = 'block';
     });
   }
 
+  // ---------- marcar (asiste / check-in) ----------
+  function marcar(id, patch, boton){
+    if(boton) boton.disabled = true;
+    fetch(BASE + '/marcar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(Object.assign({ clave: laClave(), id: id }, patch))
+    })
+    .then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
+    .then(function(res){
+      if(res.s === 200 && res.j.ok && res.j.fila){
+        for(var i = 0; i < datos.length; i++){
+          if(datos[i].id === res.j.fila.id){
+            datos[i].asistira = res.j.fila.asistira;
+            datos[i].checkin_en = res.j.fila.checkin_en;
+            datos[i].checkin_por = res.j.fila.checkin_por;
+            break;
+          }
+        }
+        pintar();
+      } else {
+        alert(res.j.error || 'No se pudo guardar. Refresca e intenta de nuevo.');
+        if(boton) boton.disabled = false;
+      }
+    })
+    .catch(function(){ alert('Error de conexión.'); if(boton) boton.disabled = false; });
+  }
+
+  document.getElementById('tabla').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-act]');
+    if(!b) return;
+    var id = b.getAttribute('data-id');
+    if(b.getAttribute('data-act') === 'asiste'){
+      var r = datos.filter(function(x){ return x.id === id; })[0];
+      marcar(id, { asistira: !(r && r.asistira) }, b);
+    }
+    if(b.getAttribute('data-act') === 'chk'){
+      marcar(id, { checkin: true, por: quien() }, b);
+    }
+    if(b.getAttribute('data-act') === 'unchk'){
+      if(confirm('¿Quitar el check-in de ' + b.getAttribute('data-n') + '?')){
+        marcar(id, { checkin: false }, b);
+      }
+    }
+  });
+
+  // ---------- filtros ----------
+  document.querySelectorAll('.chip[data-f]').forEach(function(c){
+    c.addEventListener('click', function(){
+      filtro = this.getAttribute('data-f');
+      document.querySelectorAll('.chip[data-f]').forEach(function(x){ x.classList.remove('on'); });
+      this.classList.add('on');
+      pintar();
+    });
+  });
+  document.getElementById('buscar').addEventListener('input', pintar);
+  document.getElementById('orden').addEventListener('change', pintar);
+
+  // ---------- entrar / salir / refrescar ----------
   document.getElementById('entrar').addEventListener('click', function(){
     cargar(document.getElementById('clave').value.trim());
   });
   document.getElementById('clave').addEventListener('keydown', function(e){
     if(e.key === 'Enter') cargar(this.value.trim());
   });
-  document.getElementById('refrescar').addEventListener('click', function(){
-    cargar(sessionStorage.getItem('evclave') || '');
-  });
+  document.getElementById('refrescar').addEventListener('click', function(){ cargar(laClave()); });
   document.getElementById('salir').addEventListener('click', function(){
     sessionStorage.removeItem('evclave'); location.reload();
   });
+
+  // refresco silencioso cada 60 s: si hay dos laptops en la puerta, se ven entre sí
+  setInterval(function(){
+    if(document.visibilityState === 'visible' && laClave() && panel.style.display === 'block'){
+      cargar(laClave(), true);
+    }
+  }, 60000);
+
+  // ---------- CSV (lista final: incluye asiste y check-in al momento) ----------
   document.getElementById('csv').addEventListener('click', function(){
     var enc = function(v){ v = String(v == null ? '' : v); return '"' + v.replace(/"/g,'""') + '"'; };
-    var csv = '﻿Nombre,Empresa,Puesto,Email,Celular,Asiste,Registrado,Check-in\r\n';
+    var csv = '﻿Nombre,Empresa,Puesto,Email,Celular,Asiste,Registrado,Check-in,Check-in por,Fuente,Notas\r\n';
     datos.forEach(function(r){
       csv += [enc(r.nombre),enc(r.empresa),enc(r.puesto),enc(r.email),enc(r.celular),
-        r.asistira?'Si':'No',enc(fecha(r.creado_en)),enc(r.checkin_en?fecha(r.checkin_en):'')].join(',') + '\r\n';
+        r.asistira?'Si':'No',enc(fecha(r.creado_en)),enc(r.checkin_en?fecha(r.checkin_en):''),
+        enc(r.checkin_por),enc(r.fuente),enc(r.notas)].join(',') + '\r\n';
     });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
@@ -172,8 +330,7 @@
     a.click();
   });
 
-  // -------- registro manual --------
-  var ALTA = 'https://nlbydvntjbevbhghtdcx.supabase.co/functions/v1/evento/alta';
+  // ---------- registro manual ----------
   var alta = document.getElementById('alta');
   var aerr = document.getElementById('aerr'), aok = document.getElementById('aok');
   document.getElementById('agregar').addEventListener('click', function(){
@@ -187,8 +344,8 @@
   document.getElementById('aGuardar').addEventListener('click', function(){
     aerr.style.display = 'none'; aok.style.display = 'none';
     var btn = this;
-    var datos = {
-      clave:   sessionStorage.getItem('evclave') || '',
+    var d = {
+      clave:   laClave(),
       nombre:  document.getElementById('aNombre').value.trim(),
       empresa: document.getElementById('aEmpresa').value.trim(),
       puesto:  document.getElementById('aPuesto').value.trim(),
@@ -197,22 +354,22 @@
       notas:   document.getElementById('aNotas').value.trim(),
       asistira: document.getElementById('aAsiste').value === 'si'
     };
-    if(!datos.nombre || !datos.empresa || !datos.email){
+    if(!d.nombre || !d.empresa || !d.email){
       aerr.textContent = 'Faltan nombre, empresa o correo.'; aerr.style.display = 'inline'; return;
     }
     btn.disabled = true; btn.textContent = 'Guardando…';
-    fetch(ALTA, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(datos) })
+    fetch(BASE + '/alta', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d) })
     .then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
     .then(function(res){
       btn.disabled = false; btn.textContent = 'Guardar registro';
       if(res.s === 200 && res.j.ok){
-        aok.textContent = '✓ Guardado: ' + (res.j.fila ? res.j.fila.nombre : datos.nombre);
+        aok.textContent = '✓ Guardado: ' + (res.j.fila ? res.j.fila.nombre : d.nombre);
         aok.style.display = 'inline';
         ['aNombre','aEmpresa','aPuesto','aEmail','aCelular','aNotas'].forEach(function(id){
           document.getElementById(id).value = '';
         });
         document.getElementById('aNombre').focus();
-        cargar(sessionStorage.getItem('evclave') || '');
+        cargar(laClave(), true);
       } else {
         aerr.textContent = res.j.error || 'No se pudo guardar.';
         aerr.style.display = 'inline';
