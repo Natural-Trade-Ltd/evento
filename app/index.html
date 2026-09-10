@@ -59,7 +59,7 @@
         <li>El 1 de octubre tu portal estará disponible con tu información.</li>
       </ol>
     </div>
-    <p class="hint" id="hint">¿No abrió sola? Usa los botones de arriba.</p>
+    <p class="hint" id="hint">¿No abrió sola? Usa el botón de arriba. La NT App es solo para iPhone y Android; no tiene versión web.</p>
   </main>
 
 <script>
@@ -83,7 +83,12 @@
     if (msg) lead.textContent = msg;
     if (IOS){ cta.hidden = false; cta.href = APPSTORE; cta.textContent = 'iPhone · App Store'; }
     else if (AND){ cta.hidden = false; cta.href = PLAY; cta.textContent = 'Android · Google Play'; }
-    else { stores.hidden = false; }
+    else {
+      // Escritorio: la app no tiene versión web. Solo se indica que se abra desde el teléfono.
+      title.textContent = 'La NT App es para tu teléfono';
+      stores.hidden = false;
+      hint.textContent = 'No hay versión web. Descárgala en tu iPhone o Android desde la tienda que corresponda.';
+    }
   }
 
   var opened = false;
@@ -102,8 +107,8 @@
     setTimeout(function(){ if (!opened) window.location.replace(APPSTORE); }, 1200);
     setTimeout(function(){ if (!opened) mostrarManual(); }, 2600);
   } else {
-    // Escritorio: no hay app; muestra ambas tiendas.
-    mostrarManual('Ábrela desde tu teléfono: escanea o entra a la tienda de tu dispositivo.');
+    // Escritorio: no existe versión web. Pide abrir el correo en el teléfono o ir a la tienda.
+    mostrarManual('Abre este correo en tu iPhone o Android y vuelve a tocar el botón, o descárgala aquí:');
   }
 </script>
 </body>
