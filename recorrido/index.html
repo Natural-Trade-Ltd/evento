@@ -45,7 +45,20 @@
 
   /* ---------- main ---------- */
   main{flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:clamp(18px,3.2vw,54px); min-height:0}
-  @media (max-width:820px){ main{flex-direction:column; gap:14px} }
+  @media (max-width:820px){
+    main{flex-direction:column; gap:10px; align-items:stretch}
+    .stage{flex:1 1 auto; min-height:0; width:100%}
+    .phone{animation:none; padding:7px; border-radius:34px}
+    .phone::before,.phone::after{display:none}
+    .glass{border-radius:28px}
+    .notch{height:20px; padding:0 16px}
+    .notch .time{font-size:10px}
+    .notch .island{top:5px; height:10px}
+    .notch .batt{width:16px; height:8px}
+    .chrono{top:-14px; padding:5px 12px 5px 10px}
+    .chrono .val{font-size:15px; min-width:46px}
+    .screen{transition:height .25s ease}
+  }
 
   /* phone — marco iPhone */
   .stage{position:relative; display:flex; align-items:center; justify-content:center; min-height:0; height:100%}
@@ -68,7 +81,7 @@
   .notch .batt{width:22px; height:11px; border:1.5px solid var(--ink); border-radius:3px; position:relative; opacity:.85}
   .notch .batt::before{content:""; position:absolute; left:1.5px; top:1.5px; bottom:1.5px; width:72%; background:var(--ink); border-radius:1px}
   .notch .batt::after{content:""; position:absolute; right:-3px; top:3px; height:5px; width:2px; background:var(--ink); border-radius:1px}
-  .screen{position:relative; flex:0 0 auto; height:min(72vh, calc(88vw * 2.163)); aspect-ratio:820/1774;
+  .screen{position:relative; flex:0 0 auto; height:var(--shot-h, min(72vh, calc(88vw * 2.163))); aspect-ratio:820/1774;
     overflow:hidden; background:var(--marfil)}
   .screen img{position:absolute; inset:0; width:100%; height:auto; display:block; transition:opacity .34s ease}
   .screen.fading img{opacity:0}
@@ -118,7 +131,18 @@
     border-radius:18px; padding:26px 26px 24px; box-shadow:0 20px 44px -26px rgba(0,0,0,.6);
     display:flex; flex-direction:column; gap:12px;
   }
-  @media (max-width:820px){ .caption{width:100%; max-width:520px; padding:18px 18px 16px; gap:9px} }
+  @media (max-width:820px){
+    .caption{flex:0 0 auto; width:100%; max-width:520px; margin:0 auto; padding:14px 16px 13px; gap:7px;
+      max-height:46vh; overflow:auto; -webkit-overflow-scrolling:touch}
+    .caption h2{font-size:17px}
+    .caption p{font-size:13.5px; line-height:1.45; max-width:none}
+    .caption .lede{font-size:14px}
+    .cap-num{width:26px; height:26px; font-size:13px; margin-top:0}
+    .eyebrow{font-size:10px; letter-spacing:1.1px}
+    .stats{gap:16px}
+    .stat .num{font-size:24px}
+    .stat .cap{font-size:9.5px}
+  }
   .eyebrow{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:600;letter-spacing:1.4px;
     text-transform:uppercase;color:var(--sage-strong)}
   .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--cafe)}
@@ -174,10 +198,14 @@
   :focus-visible{outline:2px solid var(--ring);outline-offset:3px;border-radius:8px}
 
   @media (max-width:820px){
-    .dots{max-width:100%}
+    .app{padding:10px 12px 12px; gap:8px}
+    .brand h1{font-size:13.5px}
+    .brand p{font-size:10.5px}
+    .dots{display:none}
     .caption{order:2}
-    .foot{flex-wrap:wrap}
+    .foot{justify-content:space-between}
     .nav{order:1}
+    .btn{font-size:13.5px; padding:9px 15px}
   }
   @media (prefers-reduced-motion:reduce){
     .spot,.screen img,.pin,.track>i{transition:none}
@@ -448,6 +476,7 @@ function render(){
   renderStats(s.stats);
   const cn=el('capNum');
   if(s.n){ cn.classList.remove('hide'); cn.textContent=s.n; } else cn.classList.add('hide');
+  requestAnimationFrame(fitPhone);
 
   if(s.r){
     const [l,t,w,h]=s.r;
@@ -469,6 +498,23 @@ function render(){
     if(done && confettiAt!==i){ confettiAt=i; if(!STATIC) burst(); }
   }
 }
+
+// Móvil: la pantalla del teléfono se ajusta al espacio que deja la tarjeta de texto,
+// para que el texto que explica cada paso siempre quede visible (antes el marco lo tapaba).
+const mainEl=document.querySelector('main'), stageEl=document.querySelector('.stage');
+function fitPhone(){
+  if(innerWidth>820){ document.documentElement.style.removeProperty('--shot-h'); return; }
+  if(phone.hidden){ return; }
+  const capH = caption.hidden ? 0 : caption.getBoundingClientRect().height;
+  const gap = 10;
+  const libre = mainEl.clientHeight - capH - gap;
+  // cromo del marco: padding 7×2 + notch 20 + borde ≈ 36px
+  const h = Math.max(220, Math.floor(libre - 36));
+  const maxH = (stageEl.clientWidth - 16) * 2.163; // que nunca desborde a lo ancho
+  document.documentElement.style.setProperty('--shot-h', Math.min(h, Math.floor(maxH))+'px');
+}
+addEventListener('resize', fitPhone);
+if('ResizeObserver' in window){ new ResizeObserver(()=>fitPhone()).observe(caption); }
 
 function go(n){ i=Math.max(0,Math.min(S.length-1,n)); render(); }
 function next(){ if(i<S.length-1) go(i+1); else stop(); }
